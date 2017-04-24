@@ -1,6 +1,7 @@
 import os
 import threading
 import logging
+import time
 
 import alsaaudio
 from pocketsphinx import get_model_path
@@ -48,7 +49,9 @@ class PocketsphinxTrigger(BaseTrigger):
 		thread.start()
 
 	def thread(self):
+		tries = 3
 		while True:
+		  try:
 			self._enabled_lock.wait()
 
 			# Enable reading microphone raw data
@@ -83,6 +86,12 @@ class PocketsphinxTrigger(BaseTrigger):
 
 			if triggered:
 				self._trigger_callback(self)
+		  except Exception as e:
+			logger.error(e)
+			time.sleep(10)
+			tries = tries - 1
+			if tries < 1:
+				raise
 
 	def enable(self):
 		self._enabled_lock.set()
